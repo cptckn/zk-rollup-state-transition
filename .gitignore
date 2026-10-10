@@ -1,0 +1,23 @@
+# Rust build artifacts
+target/
+
+# Circom / Node dependencies
+node_modules/
+build/
+
+# Generated proving artifacts
+*.r1cs
+*.wtns
+*.zkey
+*.ptau
+*.wasm
+*.sym
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
