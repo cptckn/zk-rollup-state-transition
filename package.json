@@ -1,0 +1,35 @@
+{
+  "name": "zk-rollup-state-transition",
+  "version": "1.0.0",
+  "description": "A Circom-based ZK-rollup state-transition circuit with testing and soundness analysis.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:merkle": "node tests/run-merkle-tests.cjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cptckn/zk-rollup-state-transition.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/cptckn/zk-rollup-state-transition/issues"
+  },
+  "homepage": "https://github.com/cptckn/zk-rollup-state-transition#readme",
+  "dependencies": {
+    "circomlib": "^2.0.5"
+  },
+  "devDependencies": {
+    "snarkjs": "^0.7.6"
+  },
+  "overrides": {
+    "underscore": "1.13.8"
+  }
+}

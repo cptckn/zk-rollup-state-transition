@@ -1,0 +1,9 @@
+[package]
+name = "testgen"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ark-bn254 = "0.5"
+ark-ff = "0.5"
+light-poseidon = "0.4.0"
