@@ -72,3 +72,64 @@ not a vulnerability in the original circuit.
 The experiment demonstrates the necessity
 of range constraints when implementing integer
 arithmetic over finite fields.
+
+## Experiment 2: Nonce Range Constraint
+
+### Objective
+
+Demonstrate why the 32-bit range constraint on
+`newNonce` is necessary for the intended
+nonce-update semantics.
+
+### Mutation
+
+Removed the following statements from
+`state_transition.circom`:
+
+```circom
+component newNonceBits = Num2Bits(32);
+newNonceBits.in <== newNonce;
+```
+
+The modified circuit is stored in
+`circuits/state_transition_no_nonce_range.circom`.
+
+### Counterexample
+
+Let:
+
+- oldNonce = 4294967295 = 2^32 - 1
+- newNonce = 4294967296 = 2^32
+
+The field equation
+
+newNonce = oldNonce + 1
+
+is satisfied, but newNonce exceeds the maximum
+unsigned 32-bit integer.
+
+The corresponding Poseidon-based Merkle roots
+were generated using the Rust test generator.
+
+### Experimental Results
+
+Original circuit:
+- 9,793 R1CS constraints
+- Witness generation rejected with Assert Failed
+- Failure occurred in Num2Bits
+
+Modified circuit:
+- 9,760 R1CS constraints
+- 33 fewer constraints
+- Witness generated successfully
+- snarkJS reported WITNESS IS CORRECT
+
+### Conclusion
+
+Removing the newNonce range constraint permits
+a witness that violates the intended unsigned
+32-bit nonce semantics while satisfying the
+modified R1CS.
+
+This is a controlled mutation experiment,
+not a vulnerability in the original circuit.
