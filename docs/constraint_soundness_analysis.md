@@ -133,3 +133,66 @@ modified R1CS.
 
 This is a controlled mutation experiment,
 not a vulnerability in the original circuit.
+
+
+## Experiment 3: New Merkle Root Binding
+
+### Objective
+
+Demonstrate that the public newRoot must be
+constrained to equal the Merkle root computed
+from the updated account state.
+
+### Mutation
+
+Removed the following constraint:
+
+    newRoot === newProof.root;
+
+Experimental circuit:
+`circuits/state_transition_no_new_root_check.circom`
+
+### Counterexample
+
+Input fixture:
+`tests/inputs/state_transition_invalid_new_root.json`
+
+The fixture supplies an invalid public newRoot
+while retaining the other state-transition inputs.
+
+In the original circuit, the public newRoot must
+equal the root reconstructed from the updated leaf
+and the Merkle authentication path.
+
+In the mutated circuit, this equality is absent.
+
+### Experimental Results
+
+Original circuit:
+- Invalid newRoot rejected (existing negative test).
+
+Modified circuit:
+- Compilation succeeded.
+- 9,793 R1CS constraints.
+- Witness generation succeeded.
+- snarkJS reported WITNESS IS CORRECT.
+
+The total R1CS constraint count is unchanged
+after compilation; this does not establish
+equivalence between the two circuits.
+
+### Conclusion
+
+Removing the new-root equality allows a
+satisfying witness with a public newRoot
+that does not represent the computed updated state.
+
+This demonstrates that the binding between
+the public commitment and the constrained state
+transition is essential.
+
+The experiment is a controlled mutation, not
+a vulnerability in the original circuit.
+
+It does not establish general circuit soundness
+or cryptographic proof-system soundness.
