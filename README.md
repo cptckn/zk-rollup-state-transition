@@ -1,5 +1,7 @@
 # ZK-Rollup State-Transition Circuit
 
+[![Circom circuit and mutation tests](https://github.com/cptckn/zk-rollup-state-transition/actions/workflows/ci.yml/badge.svg)](https://github.com/cptckn/zk-rollup-state-transition/actions/workflows/ci.yml)
+
 A Circom 2 implementation of a **single-account state-update consistency relation** over the BN254 scalar field, with Rust fixture generation, R1CS witness tests, and controlled constraint-mutation experiments.
 
 **Scope:** This is an educational research prototype, **not** a secure, deployable rollup or an authorized transaction system. In particular, it does not verify signatures or generate/verify SNARK proofs.
