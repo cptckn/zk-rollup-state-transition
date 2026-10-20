@@ -1,5 +1,19 @@
 
 # Constraint Soundness Analysis
+## Reproducing all three mutation experiments
+
+From a clean checkout, install Circom 2.1.9 and Node.js/npm. Run:
+
+```bash
+npm ci
+npm test
+```
+
+This command compiles the baseline and three deliberately weakened circuits and then runs the 12 ordinary fixture tests plus three side-by-side mutation checks. Each mutation check uses **the same malicious input** for both variants: the original must reject it with a witness-calculation assertion, while the weakened circuit must generate a witness that passes `snarkjs wtns check` against its R1CS. See [the CI workflow](../.github/workflows/ci.yml) and its GitHub Actions logs for an externally reproducible clean run.
+
+The result illustrates the importance of the removed checks; it is not a formal proof of general soundness and does not show a flaw in the original circuit.
+
+
 
 ## Experiment 1: Modular Underflow
 
