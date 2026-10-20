@@ -1,6 +1,6 @@
 # ZK-Rollup State-Transition Circuit
 
-A Circom 2 implementation of a **single-account state-update consistency relation** over the BN254 scalar field, with Rust fixture generation, R1CS witness tests, and an accompanying constraint analysis.
+A Circom 2 implementation of a **single-account state-update consistency relation** over the BN254 scalar field, with Rust fixture generation, R1CS witness tests, and controlled constraint-mutation experiments.
 
 **Scope:** This is an educational research prototype, **not** a secure, deployable rollup or an authorized transaction system. In particular, it does not verify signatures or generate/verify SNARK proofs.
 
@@ -26,22 +26,22 @@ The bounds prevent unintended modular wraparound in balance/nonce arithmetic. Th
 | `tests/inputs/` | Valid and adversarial witness fixtures |
 | `tests/run-merkle-tests.cjs` | Four Merkle membership tests |
 | `tests/run-state-transition-tests.cjs` | Eight state-transition tests |
+| `tests/run-mutation-tests.cjs` | Three original-versus-mutant witness comparisons |
+| `scripts/build-circuits.cjs` | Compiles baseline and mutated circuits |
+| `.github/workflows/ci.yml` | Clean Linux build on pushes and pull requests |
 | `docs/state_transition_design.md` | Exact mathematical statement and limitations |
 | `docs/constraint_soundness_analysis.md` | Reasoning-based audit and security assumptions |
 
-## Reproduce the tests
+## Reproduce the 12 baseline tests and 3 mutation experiments
 
 Prerequisites: **Circom 2.1+**, **Node.js/npm**, and optionally **Rust/Cargo** to regenerate the committed input fixtures. From the repository root:
 
 ```bash
 npm ci
-mkdir -p build
-circom circuits/merkle_tree.circom --r1cs --wasm --sym -l node_modules -o build
-circom circuits/state_transition.circom --r1cs --wasm --sym -l node_modules -o build
 npm test
 ```
 
-PowerShell: use `New-Item -ItemType Directory -Force build | Out-Null` instead of `mkdir -p build`, and `npm.cmd` if required by PowerShell execution policy.
+The `npm test` script compiles two baseline and three deliberately weakened circuits, runs 4 Merkle + 8 state-transition tests, and then verifies the three mutation experiments. On PowerShell, use `npm.cmd` if required by execution policy.
 
 The two test runners check **4 Merkle** and **8 state-transition** positive/negative fixtures. Recreate the state-transition fixtures using:
 
@@ -49,9 +49,23 @@ The two test runners check **4 Merkle** and **8 state-transition** positive/nega
 cargo run --release --manifest-path rust/testgen/Cargo.toml --bin state_transition_input
 ```
 
+## Reproducing the controlled mutation experiments
+
+The intentionally insecure circuits `circuits/state_transition_no_*.circom` and their counterexample fixtures are checked side-by-side against the original implementation. Run the entire suite with `npm test`, or after `npm run build:circom` run `npm run test:mutations` separately.
+
+| Experiment | Counterexample | Baseline | Mutated circuit |
+| --- | --- | --- | --- |
+| Unsigned-balance underflow | `tests/inputs/state_transition_invalid_underflow.json` (`newBalance=p-1`) | Reject | Accept without `newBalance` range check |
+| 32-bit nonce overflow | `tests/mutations/nonce_overflow/state_transition_valid.json` (`newNonce=2^32`) | Reject | Accept without `newNonce` range check |
+| Incorrect public new root | `tests/inputs/state_transition_invalid_new_root.json` | Reject | Accept without `newRoot === newProof.root` |
+
+Each test requires the *same* input to be rejected by the original witness calculator, then accepted by the mutant with `snarkjs wtns check` reporting a correct witness for that mutant's R1CS. The tests demonstrate why these constraints matter; they do **not** establish a formal soundness proof.
+
+The clean Linux build is configured in [GitHub Actions](.github/workflows/ci.yml). A successful CI run, rather than merely the existence of test scripts, provides evidence that a fresh checkout builds and passes the suite.
+
 ## Security research and limitations
 
-The source demonstrates why range checks, Merkle-root binding, and nonce consistency matter. Additional controlled constraint-removal experiments have been performed during development, but those mutations are **not included in the automated 12-fixture test suite**; their experimental results should not be confused with independently reproducible tests in this repository.
+The source demonstrates why range checks, Merkle-root binding, and nonce consistency matter. The 12 baseline fixtures and three controlled constraint-removal experiments are separate checks. The mutation tests compare the original circuit with deliberately weakened variants; they do not imply a flaw in the original.
 
 Passing R1CS witness tests is **not** a formal soundness proof. In particular, the circuit currently lacks: (1) account-owner authorization/signatures, (2) recipient-side changes and conservation across accounts, (3) a trusted on-chain root binding, and (4) Groth16 proof generation and verification. Its intended purpose is to study the **correctness of a narrowly specified arithmetic/Merkle relation**, not to protect assets.
 
