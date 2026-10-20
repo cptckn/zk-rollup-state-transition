@@ -1,11 +1,13 @@
 {
   "name": "zk-rollup-state-transition",
   "version": "1.0.0",
-  "description": "A Circom single-account state-transition consistency circuit with security analysis.",
+  "description": "A Circom single-account state-transition consistency circuit with controlled constraint-mutation tests.",
   "scripts": {
-    "test": "npm run test:merkle && npm run test:state",
+    "build:circom": "node scripts/build-circuits.cjs",
+    "test": "npm run build:circom && npm run test:merkle && npm run test:state && npm run test:mutations",
     "test:merkle": "node tests/run-merkle-tests.cjs",
-    "test:state": "node tests/run-state-transition-tests.cjs"
+    "test:state": "node tests/run-state-transition-tests.cjs",
+    "test:mutations": "node tests/run-mutation-tests.cjs"
   },
   "repository": {
     "type": "git",
