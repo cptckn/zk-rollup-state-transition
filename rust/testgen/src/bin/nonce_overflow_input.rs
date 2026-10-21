@@ -101,9 +101,9 @@ fn write_case(directory: &PathBuf, name: &str, case: &TestCase<'_>) {
         elements,
         indices
     );
-    fs::write(directory.join(format!("state_transition_{name}.json")), json)
+    fs::write(directory.join(format!("{name}.json")), json)
         .expect("unable to write test input");
-    println!("Generated state_transition_{name}.json");
+    println!("Generated {name}.json");
 }
 
 fn main() {
@@ -140,7 +140,7 @@ fn main() {
     let outputs = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../tests/mutations/nonce_overflow");
     fs::create_dir_all(&outputs).unwrap();
-    let mut valid = TestCase {
+    let counterexample = TestCase {
         old_root,
         new_root,
         amount: AMOUNT,
@@ -148,63 +148,9 @@ fn main() {
         new_nonce,
         path_elements: &siblings,
         path_indices: &indices,
-    };
-    write_case(&outputs, "valid", &valid);
+      write_case(&outputs, "nonce_overflow_counterexample", &counterexample);
 
-    // Root mismatches.
-    valid.old_root = Fr::zero();
-    write_case(&outputs, "invalid_old_root", &valid);
-    valid.old_root = old_root;
-    valid.new_root = Fr::zero();
-    write_case(&outputs, "invalid_new_root", &valid);
-    valid.new_root = new_root;
-
-    // Changed path but unchanged roots.
-    let mut bad_siblings = siblings.clone();
-    bad_siblings[0] = Fr::zero();
-    valid.path_elements = &bad_siblings;
-    write_case(&outputs, "invalid_path", &valid);
-    valid.path_elements = &siblings;
-
-    // Non-binary selector (must fail the binary constraint).
-    let mut bad_indices = indices.clone();
-    bad_indices[0] = 2;
-    valid.path_indices = &bad_indices;
-    write_case(&outputs, "invalid_index", &valid);
-    valid.path_indices = &indices;
-
-    // Nonce=5 changes the committed leaf/new root, but violates nonce += 1.
-    valid.new_nonce = OLD_NONCE + 2;
-    valid.new_root = merkle_root_from_path(
-        account_leaf(new_balance, valid.new_nonce),
-        &siblings,
-        &indices,
-    );
-    write_case(&outputs, "invalid_nonce", &valid);
-    valid.new_nonce = new_nonce;
-
-    // A deliberately adversarial field wraparound case:
-    // 500 == (p-1) + 501 mod p, but newBalance=p-1 is NOT a 64-bit value.
-    let negative_one = Fr::zero() - Fr::from(1u64);
-    valid.amount = OLD_BALANCE + 1;
-    valid.new_balance = negative_one;
-    valid.new_root = merkle_root_from_path(
-        account_leaf(negative_one, new_nonce),
-        &siblings,
-        &indices,
-    );
-    write_case(&outputs, "invalid_underflow", &valid);
-
-    // Wrong arithmetic with the new root still matching the new leaf.
-    let incorrect_balance = Fr::from(399u64);
-    valid.amount = AMOUNT;
-    valid.new_balance = incorrect_balance;
-    valid.new_root = merkle_root_from_path(
-        account_leaf(incorrect_balance, new_nonce),
-        &siblings,
-        &indices,
-    );
-    write_case(&outputs, "invalid_arithmetic", &valid);
+d);
 
     println!("Old root: {}", decimal(old_root));
     println!("New root: {}", decimal(new_root));

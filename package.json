@@ -13,7 +13,7 @@
     "type": "git",
     "url": "git+https://github.com/cptckn/zk-rollup-state-transition.git"
   },
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "circomlib": "^2.0.5"

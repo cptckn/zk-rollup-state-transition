@@ -15,6 +15,61 @@ The result illustrates the importance of the removed checks; it is not a formal 
 
 
 
+## R1CS-level reasoning and its limits
+
+The test suite is a **differential regression test**: with identical JSON inputs,
+the original witness calculator rejects a fixture, whereas a deliberately
+weakened circuit produces a witness that satisfies its compiled R1CS. A
+witness-calculator assertion alone is **not** a proof that the original R1CS
+has no other satisfying witness. The observations below identify the actual
+algebraic constraints and distinguish fixed-witness contradictions from
+cryptographic assumptions needed when only public inputs are fixed.
+
+**Range constraints.** In the intended Circom encoding,
+`Num2Bits(k)` introduces Boolean wires `b_i` with
+`b_i(b_i-1)=0` and reconstructs the signal as
+`x = sum_{i=0}^{k-1} 2^i b_i` in the BN254 scalar field `F_p`.
+Since `2^65 < p`, the 32- and 64-bit represented values, and
+the sum of two 64-bit values, agree with ordinary nonnegative
+integer arithmetic; the relevant equations cannot silently wrap
+modulo `p`.
+
+1. **Balance underflow:** In the counterexample the fixed account opening
+   has `oldBalance=500` and public `amount=501`. The baseline
+   imposes `oldBalance = newBalance + amount` and
+   `0 <= newBalance < 2^64`. Thus for this fixed opening the
+   required integer equation would be `500 = newBalance + 501`,
+   which has no nonnegative solution. The mutant permits
+   `newBalance=p-1`, satisfying the field equation modulo `p`.
+2. **Nonce overflow:** With the counterexample's fixed account opening,
+   `oldNonce=2^32-1`. Baseline constraints impose both
+   `newNonce=oldNonce+1` and `0 <= newNonce < 2^32`.
+   The only integer continuation is `2^32`, which the baseline
+   disallows; the mutant lacking the `newNonce` range check
+   accepts it. **This is an integer-range invariant violation,
+   not a demonstrated replay attack**: the current prototype has
+   no authorization/signature mechanism.
+3. **New-root binding:** For the counterexample's fixed leaf and
+   authentication path, `newProof.root` is a deterministic field
+   value, different from the supplied public `newRoot=0`.
+   The baseline R1CS includes `newRoot - newProof.root = 0`,
+   so that *fixed opening* cannot satisfy the equation. The mutant
+   removes the equality, allowing that public root to be unrelated
+   to its privately computed updated root.
+
+**Scope of the argument.** These are algebraic contradictions **for
+the displayed account openings and Merkle paths**. In the implemented
+statement only `oldRoot`, `newRoot`, and `amount` are public; account
+fields and path are private. Therefore, showing that *no other private
+witness* can satisfy the original circuit for the same public tuple
+is a stronger claim, **not** established by the calculator failures or
+the preceding fixed-opening algebra. Treating the roots as binding
+commitments to their intended openings requires cryptographic
+assumptions (e.g. collision/second-preimage resistance of the
+Poseidon-based Merkle construction) and reasoning about feasible
+adversaries; it does not turn the tests into an unconditional
+unsatisfiability certificate or a formal proof of protocol soundness.
+
 ## Experiment 1: Modular Underflow
 
 ### Objective
@@ -123,7 +178,9 @@ is satisfied, but newNonce exceeds the maximum
 unsigned 32-bit integer.
 
 The corresponding Poseidon-based Merkle roots
-were generated using the Rust test generator.
+were generated using the Rust test generator. The committed fixture is
+`tests/mutations/nonce_overflow/nonce_overflow_counterexample.json`,
+recreated by running `cargo run --release --manifest-path rust/testgen/Cargo.toml --bin nonce_overflow_input`.
 
 ### Experimental Results
 
@@ -146,7 +203,9 @@ a witness that violates the intended unsigned
 modified R1CS.
 
 This is a controlled mutation experiment,
-not a vulnerability in the original circuit.
+not a vulnerability in the original circuit. It establishes a violated
+32-bit integer-range invariant; because the prototype does not authenticate
+state updates, it is not evidence of a replay attack.
 
 
 ## Experiment 3: New Merkle Root Binding

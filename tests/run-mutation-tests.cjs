@@ -18,7 +18,7 @@ const mutationCases = [
   },
   {
     name: 'nonce range / 32-bit overflow',
-    input: 'tests/mutations/nonce_overflow/state_transition_valid.json',
+    input: 'tests/mutations/nonce_overflow/nonce_overflow_counterexample.json',
     mutant: 'no_nonce_range',
     circuit: 'state_transition_no_nonce_range',
   },
