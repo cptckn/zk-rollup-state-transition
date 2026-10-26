@@ -5,13 +5,13 @@ use light_poseidon::{Poseidon, PoseidonHasher};
 const DEPTH: usize = 8;
 
 fn poseidon(inputs: &[Fr]) -> Fr {
-    // new_circom: circomlib ile aynı sabitler/parametreler
+    // new_circom uses the same constants and parameters as circomlib
     let mut h = Poseidon::<Fr>::new_circom(inputs.len()).unwrap();
     h.hash(inputs).unwrap()
 }
 
 fn main() {
-    // Bilinen test vektörü: circomlib Poseidon([1,2])
+    // Known test vector: circomlib Poseidon([1, 2])
     let tv = poseidon(&[Fr::from(1u64), Fr::from(2u64)]);
     println!("Poseidon(1,2) = {}", tv.into_bigint());
     assert_eq!(
@@ -19,7 +19,7 @@ fn main() {
         "7853200120776062878684798364095072458815029376092732009249414926327459813530"
     );
 
-    // 256 yaprak: ilk birkaç hesap dolu, geri kalanı 0
+    // 256 leaves: the first few contain account data; the rest are zero
     let n = 1usize << DEPTH;
     let mut leaves = vec![Fr::zero(); n];
     let accounts: Vec<(u64, u64, u64)> = vec![(111, 1000, 0), (222, 500, 3), (333, 42, 7)];
@@ -27,7 +27,7 @@ fn main() {
         leaves[i] = poseidon(&[Fr::from(*pk), Fr::from(*bal), Fr::from(*nonce)]);
     }
 
-    // Tüm katmanları hesapla
+    // Compute all Merkle tree levels
     let mut layers: Vec<Vec<Fr>> = vec![leaves];
     for _ in 0..DEPTH {
         let prev = layers.last().unwrap();
@@ -36,7 +36,7 @@ fn main() {
     }
     let root = layers[DEPTH][0];
 
-    // Kanıtlanacak hesap: index 1 -> (222, 500, 3)
+    // Account whose Merkle inclusion is to be proven: index 1 -> (222, 500, 3)
     let idx = 1usize;
     let (pk, bal, nonce) = accounts[idx];
     let mut path_elements = vec![];
@@ -45,7 +45,7 @@ fn main() {
     for level in 0..DEPTH {
         let sibling = cur ^ 1;
         path_elements.push(layers[level][sibling]);
-        path_indices.push(cur & 1); // 0: ben solda, 1: ben sağda
+        path_indices.push(cur & 1); // 0: current node is the left child; 1: current node is the right child
         cur >>= 1;
     }
 
